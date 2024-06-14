@@ -3,8 +3,9 @@ import networkx as nx
 import numpy as np
 import os
 import time
+import re
 
-from typing import Tuple
+from typing import Tuple, List
 
 INDEX = 'dumps/enwiktionary-latest-pages-articles-multistream-index.txt.bz2'
 ARTICLES = 'dumps/enwiktionary-latest-pages-articles-multistream.xml.bz2'
@@ -74,6 +75,54 @@ def get_article(index_string: str) -> str:
         return article[start_index - 11:end_index]
     else:
         return "Article not found or incomplete."
+
+
+# sections are split up by language, as e.g. ==Chinese== or ==English==
+def get_language_sections(article: str) -> List[str]:
+    """
+    Split an article into its language sections.
+
+    Parameters
+    ----------
+    article : str
+        The content of the article.
+
+    Returns
+    -------
+    List[str]
+        A list of strings, each containing the content of a language section.
+    """
+    language_sections = re.split(r'(?===[A-Za-z]+==\n)', article)
+    return [i for i in language_sections if i.strip().startswith('==')]
+
+
+TAGS = re.compile(
+    r'(={3,}([^\n=]*)=+)(.*?)(?=(={3,}|(\[\[Category.*\]\])|\Z))', re.DOTALL)
+
+
+def get_tags_from_section(language_section: str) -> List[Tuple[str, str]]:
+    """
+    Get all sub-sections and their content from a language section. For
+    example, might return `[('Etymology', '...'), ('Pronunciation', '...')]`
+
+
+    Parameters
+    ----------
+    language_section : str
+        The content of a language section.
+
+    Returns
+    -------
+    List[Tuple[str, str]]
+        A list of tuples, each containing the title of a sub-section and 
+        its content.
+    """
+    tag_splits = TAGS.findall(language_section)
+    tag_splits = [(i[1], i[2].strip()) for i in tag_splits
+                  if i[2].strip() != '']
+    for i in tag_splits:
+        print(i)
+    return tag_splits
 
 
 start = time.perf_counter()
