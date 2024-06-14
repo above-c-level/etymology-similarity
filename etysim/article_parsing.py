@@ -24,6 +24,11 @@ def split_index(index_string: str) -> Tuple[int, int, str]:
     Tuple[int, int, str]
         A tuple containing the byte offset, article ID, and title of the
         article.
+    
+    Raises
+    ------
+    ValueError
+        If the index string is not in the correct format.
     """
     parts = index_string.split(':')
     byte_offset = int(parts[0])
@@ -46,6 +51,12 @@ def get_article(index_string: str) -> str:
     -------
     str
         The content of the article, unprocessed.
+    
+    Raises
+    ------
+    OSError
+        If the data stream offset by the value in the index stream cannot be
+        decompressed, i.e. if the data stream is invalid.
     """
     decompressor = bz2.BZ2Decompressor()
     byte_offset, _, title = split_index(index_string)
@@ -79,20 +90,22 @@ def get_article(index_string: str) -> str:
 
 
 # sections are split up by language, as e.g. ==Chinese== or ==English==
-def get_language_sections(article: str) -> List[str]:
+def get_language_sections(index_string: str) -> List[str]:
     """
-    Split an article into its language sections.
+    Look up an article and split it into its language sections.
 
     Parameters
     ----------
-    article : str
-        The content of the article.
+    index_string : str
+        A string containing the byte offset, article ID, and title of an
+        article.
 
     Returns
     -------
     List[str]
         A list of strings, each containing the content of a language section.
     """
+    article = get_article(index_string)
     language_sections = re.split(r'(?===[A-Za-z]+==\n)', article)
     return [i for i in language_sections if i.strip().startswith('==')]
 
