@@ -130,6 +130,4 @@ def get_tags_from_section(language_section: str) -> List[Tuple[str, str]]:
     tag_splits = TAGS.findall(language_section)
     tag_splits = [(i[1], i[2].strip()) for i in tag_splits
                   if i[2].strip() != '']
-    for i in tag_splits:
-        print(i)
     return tag_splits
