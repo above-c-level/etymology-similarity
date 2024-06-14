@@ -1,14 +1,12 @@
 import bz2
-import networkx as nx
-import numpy as np
-import os
-import time
 import re
 
 from typing import Tuple, List
 
 INDEX = 'dumps/enwiktionary-latest-pages-articles-multistream-index.txt.bz2'
 ARTICLES = 'dumps/enwiktionary-latest-pages-articles-multistream.xml.bz2'
+TAGS = re.compile(
+    r'(={3,}([^\n=]*)=+)(.*?)(?=(={3,}|(\[\[Category.*\]\])|\Z))', re.DOTALL)
 
 
 def split_index(index_string: str) -> Tuple[int, int, str]:
@@ -18,12 +16,14 @@ def split_index(index_string: str) -> Tuple[int, int, str]:
     Parameters
     ----------
     index_string : str
-        A string containing the byte offset, article ID, and title of an article.
+        A string containing the byte offset, article ID, and title of an
+        article.
 
     Returns
     -------
     Tuple[int, int, str]
-        A tuple containing the byte offset, article ID, and title of the article.
+        A tuple containing the byte offset, article ID, and title of the
+        article.
     """
     parts = index_string.split(':')
     byte_offset = int(parts[0])
@@ -39,7 +39,8 @@ def get_article(index_string: str) -> str:
     Parameters
     ----------
     index_string : str
-        A string containing the byte offset, article ID, and title of an article.
+        A string containing the byte offset, article ID, and title of an
+        article.
 
     Returns
     -------
@@ -65,7 +66,7 @@ def get_article(index_string: str) -> str:
     article = decompressed_data.decode('utf-8')
 
     # Extract the specific article content from the decompressed data
-    end_tag = f'</page>'
+    end_tag = '</page>'
     start_index = article.find(f'<title>{title}</title>')
     end_index = article.find(end_tag, start_index) + len(end_tag)
 
@@ -96,10 +97,6 @@ def get_language_sections(article: str) -> List[str]:
     return [i for i in language_sections if i.strip().startswith('==')]
 
 
-TAGS = re.compile(
-    r'(={3,}([^\n=]*)=+)(.*?)(?=(={3,}|(\[\[Category.*\]\])|\Z))', re.DOTALL)
-
-
 def get_tags_from_section(language_section: str) -> List[Tuple[str, str]]:
     """
     Get all sub-sections and their content from a language section. For
@@ -114,7 +111,7 @@ def get_tags_from_section(language_section: str) -> List[Tuple[str, str]]:
     Returns
     -------
     List[Tuple[str, str]]
-        A list of tuples, each containing the title of a sub-section and 
+        A list of tuples, each containing the title of a sub-section and
         its content.
     """
     tag_splits = TAGS.findall(language_section)
@@ -123,10 +120,3 @@ def get_tags_from_section(language_section: str) -> List[Tuple[str, str]]:
     for i in tag_splits:
         print(i)
     return tag_splits
-
-
-start = time.perf_counter()
-with bz2.open(INDEX, 'rt', encoding='utf-8') as f:
-    indices = f.readlines()
-end = time.perf_counter()
-print(f'Loaded {len(indices)} indices in {end - start:.2f} seconds.')
